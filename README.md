@@ -1,8 +1,27 @@
-# 쿠팡 스테이블 캐시
+# StableCoupang - 리뷰 리워드 서비스
 
-XRP Ledger 기반의 스테이블 코인 플랫폼
+XRP Ledger 기반의 스테이블 코인 플랫폼으로, AI가 평가한 리뷰 품질에 따라 KRW 토큰 리워드를 즉시 지급합니다.
 
-## 프로젝트 구조 (모노레포)
+## 핵심 컨셉
+
+좋은 리뷰는 가치가 있습니다. AI가 리뷰의 품질을 평가하고, 가치 있는 리뷰어에게 안정적인 디지털 리워드를 지급합니다.
+
+- 리뷰 = 광고: 좋은 리뷰야말로 최고의 광고
+- 리뷰어 = 마이크로 인플루언서: 신뢰할 수 있는 리뷰어의 의견이 구매 결정에 영향
+- 보상 = 스테이블코인: 실제 가치가 있는 KRW 토큰으로 즉시 지급
+
+### 기능
+
+- 제품 리뷰 작성 (텍스트 + 이미지)
+- Google Gemini AI 기반 리뷰 품질 자동 평가 (0-100점)
+- 평가 점수에 따른 KRW 스테이블코인 리워드 즉시 지급
+- 사용자별 신뢰도(Reputation Score) 관리
+- XRP Ledger 기반 지갑 자동 생성 및 토큰 관리
+- 리뷰 피드 및 대시보드
+
+자세한 내용은 [PRODUCT_SPEC.md](PRODUCT_SPEC.md)를 참고하세요.
+
+## 프로젝트 구조
 
 ```
 StableCoupang/
@@ -10,8 +29,20 @@ StableCoupang/
 │   ├── api/          # Express 백엔드 (XRP Ledger API)
 │   └── web/          # Next.js 프론트엔드
 ├── pnpm-workspace.yaml
-└── package.json
+├── package.json
+├── README.md
+└── PRODUCT_SPEC.md   # 제품 기획서
 ```
+
+packages/api
+- XRP Ledger와 Nodit API 연동을 위한 인프라 레이어
+- 블록체인 지갑/토큰 관리 담당
+
+packages/web
+- Next.js App Router 기반
+- Prisma + PostgreSQL (User, Product, Review, RewardHistory 모델 존재)
+- NextAuth 인증
+- 비즈니스 로직
 
 ## 기술 스택
 
@@ -28,6 +59,7 @@ StableCoupang/
 - shadcn/ui
 - NextAuth.js v5
 - Prisma + PostgreSQL
+- React Hook Form + Zod
 
 ## 시작하기
 
@@ -54,6 +86,13 @@ pnpm install
 ```bash
 cd packages/api
 cp .env.example .env
+pnpm dev
+```
+
+Issuer 계정 생성:
+```bash
+curl -X POST http://localhost:3000/api/admin/create-issuer
+# 응답의 seed를 .env의 ISSUER_SEED에 저장
 ```
 
 .env 파일:
@@ -63,12 +102,6 @@ XRPL_NETWORK=testnet
 ISSUER_SEED=s...  # Issuer 계정 생성 후 입력
 USE_NODIT=false
 NODIT_API_KEY=    # 선택사항
-```
-
-Issuer 계정 생성:
-```bash
-curl -X POST http://localhost:3000/api/admin/create-issuer
-# 응답의 seed를 .env의 ISSUER_SEED에 저장
 ```
 
 #### 프론트엔드 (packages/web/.env)
@@ -135,40 +168,6 @@ pnpm dev
 - 프론트엔드: http://localhost:3001
 - 백엔드 API: http://localhost:3000
 
-## 주요 기능
-
-### 회원가입
-1. 이메일/비밀번호로 회원가입
-2. 자동으로 XRP 지갑 생성
-3. Trust Line 자동 설정
-4. 테스트넷 XRP 자동 충전
-
-### 로그인
-- NextAuth.js Credentials Provider 사용
-- 세션 기반 인증
-
-### 마이페이지
-- KRW 토큰 잔액 조회
-- XRP 잔액 조회
-- 토큰 충전 (Issue)
-- 거래 내역 조회
-
-## API 엔드포인트
-
-### 백엔드 API (포트 3000)
-- `POST /api/wallet/create` - 지갑 생성
-- `GET /api/wallet/balance/:address` - 잔액 조회
-- `GET /api/wallet/transactions/:address` - 거래 내역
-- `POST /api/token/setup-trustline` - Trust Line 설정
-- `POST /api/token/issue` - 토큰 발행 (충전)
-- `POST /api/token/payment` - 토큰 송금
-
-자세한 API 문서: `packages/api/API.md`
-
-### 프론트엔드 API (포트 3001)
-- `POST /api/register` - 회원가입
-- `POST /api/auth/signin` - 로그인 (NextAuth)
-
 ## 개발 스크립트
 
 ```bash
@@ -185,21 +184,6 @@ pnpm dev:web          # 프론트엔드 dev 모드
 pnpm build:web        # 프론트엔드 빌드
 ```
 
-## 데이터베이스 스키마
-
-```prisma
-model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  password    String   // bcrypt 해시
-  name        String?
-  xrpAddress  String   @unique
-  xrpSeed     String   // 암호화됨
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-```
-
 ## 보안
 
 - 비밀번호: bcrypt 해싱
@@ -214,29 +198,3 @@ model User {
 2. .env 파일은 .gitignore에 포함되어 있습니다
 3. 프로덕션 환경에서는 반드시 NEXTAUTH_SECRET과 ENCRYPTION_KEY를 변경하세요
 4. 현재는 테스트넷을 사용합니다 (실제 자산 아님)
-
-## 트러블슈팅
-
-### PostgreSQL 연결 실패
-- PostgreSQL이 실행 중인지 확인
-- DATABASE_URL이 올바른지 확인
-- 데이터베이스가 생성되었는지 확인
-
-### 백엔드 API 연결 실패
-- 백엔드가 3000 포트에서 실행 중인지 확인
-- NEXT_PUBLIC_API_URL이 올바른지 확인
-
-### Prisma 오류
-```bash
-cd packages/web
-npx prisma generate
-npx prisma migrate dev
-```
-
-## 라이선스
-
-ISC
-
-## 기여
-
-Pull Request를 환영합니다!
