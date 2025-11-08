@@ -1,30 +1,17 @@
 {
-  "name": "hackseoul",
+  "name": "stable-coupang",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "쿠팡 스테이블 캐시 - 모노레포",
   "scripts": {
-    "dev": "nodemon --exec ts-node src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "pnpm --parallel dev",
+    "dev:api": "pnpm --filter @stable-coupang/api dev",
+    "dev:web": "pnpm --filter @stable-coupang/web dev",
+    "build": "pnpm --recursive build",
+    "build:api": "pnpm --filter @stable-coupang/api build",
+    "build:web": "pnpm --filter @stable-coupang/web build"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "xrpl": "^4.4.3"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.5",
-    "@types/node": "^24.10.0",
-    "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
-  }
+  "license": "ISC"
 }
